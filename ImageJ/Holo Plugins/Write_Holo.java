@@ -79,8 +79,8 @@ public class Write_Holo_test implements PlugIn
         raFile.seek(29);
 
         byte[] padding = new byte[35];
-        Array.fill(padding, 0);
-        writeInt(padding); // padding
+        Arrays.fill(padding, (byte)0);
+        raFile.write(padding); // padding
 
         raFile.seek(63);
 
@@ -104,7 +104,6 @@ public class Write_Holo_test implements PlugIn
     {
         ImageProcessor ip = imp.getStack().getProcessor(slice);
         //ip = ip.convertToByte(true);
-        short[] pixels = (short[])ip.getPixels();
         int width = imp.getWidth();
         int height = imp.getHeight();
         // int offset, index = 0;
@@ -118,13 +117,22 @@ public class Write_Holo_test implements PlugIn
         //     }
         // // }
         // System.arraycopy(pixels, 0, bufferWrite, 0, width * height * (bit_depth / 8));
-        for (int i = 0; i < width * height; ++i)
+        if(bit_depth == 8)
         {
-            bufferWrite[i * 2 + 1] = (byte)(pixels[i] >> 8);
-            bufferWrite[i * 2] = (byte)(pixels[i] & 0xFF);
+        byte[] pixels = (byte[])ip.getPixels();
+        raFile.write(pixels);
         }
 
-        raFile.write(bufferWrite);
+        if(bit_depth == 16)
+        {
+        short[] pixels = (short[])ip.getPixels();
+            for (int i = 0; i < width * height; ++i)
+            {
+                bufferWrite[i * 2 + 1] = (byte)(pixels[i] >> 8);
+                bufferWrite[i * 2] = (byte)(pixels[i] & 0xFF);
+            }
+            raFile.write(bufferWrite);
+        }
     }
 
      final void writeString(String s) throws IOException
