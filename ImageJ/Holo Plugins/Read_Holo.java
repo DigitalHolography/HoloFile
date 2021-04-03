@@ -15,7 +15,7 @@ import java.nio.*;
 
 public class Read_Holo extends ImagePlus implements PlugIn
 {
-    private String  plugin_name = "Holo Reader";
+    private String  plugin_name = "Read Holo";
     private int     max_header_size = 64;   // Max header size in holo file
     private int     nb_frame_pixel;         // Number of pixel in a frame (equals to: width * height)
     private int     frame_size;             // Size in bytes of a frame (equals to: width * height * bit_depth)
