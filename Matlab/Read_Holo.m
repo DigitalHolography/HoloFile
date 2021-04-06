@@ -34,13 +34,13 @@ if ~isequal(header_mmap.Data.magic_number', unicode2native('HOLO'))
 end
 
 %magic_number = header_mmap.Data.magic_number;      % Magic number, always set to "HOLO"
-%version = header_mmap.Data.version;                             % Version of holo file
-num_frames = header_mmap.Data.num_frames;                % Total number of frames in raw data
-frame_width = header_mmap.Data.width;                           % Width of a frame
-frame_height = header_mmap.Data.height;                        % Width of a frame
-%data_size = header_mmap.Data.total_size;                     % Total raw data size (always equals to width * height * num_frames * (bit_depth / 8))
-bit_depth = header_mmap.Data.bit_depth;                         % Bit depth of raw data
-endianness = header_mmap.Data.endianness;                   % Endianness of raw data
+%version = header_mmap.Data.version;                % Version of holo file
+num_frames = header_mmap.Data.num_frames;           % Total number of frames in raw data
+frame_width = header_mmap.Data.width;               % Width of a frame
+frame_height = header_mmap.Data.height;             % Width of a frame
+%data_size = header_mmap.Data.total_size;           % Total raw data size (always equals to width * height * num_frames * (bit_depth / 8))
+bit_depth = header_mmap.Data.bit_depth;             % Bit depth of raw data
+endianness = header_mmap.Data.endianness;           % Endianness of raw data
 
 if endianness == 0
     endian = 'b'; % big endian
@@ -63,7 +63,11 @@ height_range = 1:frame_height;
 
 fseek(fd, offset, 'bof');
 
+wait = waitbar(0, 'Please wait...');
+
 for i = 1:num_frames
+    waitbar(i / num_frames, wait);
+    
     fseek(fd, offset + frame_size * (i-1), 'bof'); 
     
     if bit_depth == 8
@@ -71,16 +75,18 @@ for i = 1:num_frames
     elseif bit_depth == 16
         frame_batch_16bit(width_range, height_range, i) = reshape(fread(fd, frame_width * frame_height, 'uint16=>uint16', endian), frame_width, frame_height);
     end 
-   
+    
 end
+
+close(wait);
 
 fclose(fd);
 
 %% Play image sequences
 if bit_depth == 8
-    implay(frame_batch_8bit(:, :, :), 30); %30 fps
+    implay(rot90(flipud(frame_batch_8bit(:, :, :)),3), 30); %30 fps
 elseif bit_depth == 16
-    implay(frame_batch_16bit(:, :, :), 30); %30 fps
+    implay(rot90(flipud(frame_batch_16bit(:, :, :)),3), 30); %30 fps 
 end
 
 end
