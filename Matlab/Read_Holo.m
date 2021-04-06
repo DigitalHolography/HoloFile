@@ -1,21 +1,31 @@
 function Read_Holo()
 
+%  Opens .holo image sequences.
+% 
+%   A holo file contains a header, raw data and a footer.
+%   The header speficy how raw data are formatted and the footer provide information about digital hologram rendering parameters.
+% 
+%   Find more at: https://ftp.espci.fr/incoming/Atlan/holovibes/holo/HoloFileSpecification.pdf
+ 
+%% Open .holo file 
 [filename,path] = uigetfile('*.holo');
 
 if isequal(filename,0)
     disp('User selected Cancel');
 else
     disp(['User selected ', fullfile(path, filename)]);
+end
 
-header_mmap = memmapfile( fullfile(path, filename), 'Format',...
-            {'uint8', 4, 'magic_number';...
-             'uint16', 1, 'version';...
-             'uint16', 1, 'bit_depth';...
-             'uint32', 1, 'width';...
-             'uint32', 1, 'height';...
-             'uint32', 1, 'num_frames';...
-             'uint64', 1, 'total_size';...
-             'uint8', 1,  'endianness';...
+ %% Parse header 
+header_mmap = memmapfile(fullfile(path, filename), 'Format', ...
+            {'uint8',   4,  'magic_number';...
+             'uint16',  1,  'version';...
+             'uint16',  1,  'bit_depth';...
+             'uint32',  1,  'width';...
+             'uint32',  1,  'height';...
+             'uint32',  1,  'num_frames';...
+             'uint64',  1,  'total_size';...
+             'uint8',    1,  'endianness';...
              % padding - skip
             }, 'Repeat', 1);
    
@@ -23,23 +33,25 @@ if ~isequal(header_mmap.Data.magic_number', unicode2native('HOLO'))
     error('Bad holo file.');
 end
 
-%version = header_mmap.Data.version;
-num_frames = header_mmap.Data.num_frames;
-frame_width = header_mmap.Data.width;
-frame_height = header_mmap.Data.height;
-%data_size = header_mmap.Data.total_size;
-bit_depth = header_mmap.Data.bit_depth;
-endianness = header_mmap.Data.endianness;
+%magic_number = header_mmap.Data.magic_number;      % Magic number, always set to "HOLO"
+%version = header_mmap.Data.version;                             % Version of holo file
+num_frames = header_mmap.Data.num_frames;                % Total number of frames in raw data
+frame_width = header_mmap.Data.width;                           % Width of a frame
+frame_height = header_mmap.Data.height;                        % Width of a frame
+%data_size = header_mmap.Data.total_size;                     % Total raw data size (always equals to width * height * num_frames * (bit_depth / 8))
+bit_depth = header_mmap.Data.bit_depth;                         % Bit depth of raw data
+endianness = header_mmap.Data.endianness;                   % Endianness of raw data
 
 if endianness == 0
-    endian= 'b';
+    endian = 'b'; % big endian
 else
-    endian= 'l';
+    endian = 'l'; % little endian 
 end
 
-fd = fopen( fullfile(path, filename), 'r');
+%% Parse images
+fd = fopen(fullfile(path, filename), 'r');
 
-offset = 65;
+offset = 65; % the header is 64-bit longer 
 
 frame_batch_8bit = zeros(frame_width, frame_height, num_frames, 'uint8');  
 frame_batch_16bit = zeros(frame_width, frame_height, num_frames, 'uint16');  
@@ -62,14 +74,13 @@ for i = 1:num_frames
    
 end
 
-if bit_depth == 8
-    implay(frame_batch_8bit(:,:,:),30); %30 fps
-elseif bit_depth == 16
-    implay(frame_batch_16bit(:,:,:),30); %30 fps
-end
-
 fclose(fd);
 
+%% Play image sequences
+if bit_depth == 8
+    implay(frame_batch_8bit(:, :, :), 30); %30 fps
+elseif bit_depth == 16
+    implay(frame_batch_16bit(:, :, :), 30); %30 fps
 end
 
-
+end
