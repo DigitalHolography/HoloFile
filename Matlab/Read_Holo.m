@@ -78,8 +78,6 @@ for i = 1:num_frames
     
 end
 
-close(wait);
-
 fclose(fd);
 
 %% Play image sequences
@@ -88,5 +86,7 @@ if bit_depth == 8
 elseif bit_depth == 16
     implay(rot90(flipud(frame_batch_16bit(:, :, :)),3), 30); %30 fps 
 end
+
+close(wait);
 
 end
