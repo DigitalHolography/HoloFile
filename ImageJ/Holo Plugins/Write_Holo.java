@@ -21,6 +21,7 @@ public class Write_Holo implements PlugIn
     private RandomAccessFile    raFile;
 
     private String              plugin_name = "Write Holo";
+    private int                 frame_size;         // Size in bytes of a frame (equals to: width * height * bit_depth)
 
     // Header variables
     private String              magic_number;       // Magic number, always set to "HOLO"
@@ -42,7 +43,6 @@ public class Write_Holo implements PlugIn
         {
             imp = WindowManager.getCurrentImage();
             writeImage(imp);
-            IJ.showStatus("");
         }
         catch(IOException e)
         {
@@ -59,45 +59,59 @@ public class Write_Holo implements PlugIn
         SaveDialog sd = new SaveDialog("Save as HOLO...", imp.getTitle(), ".holo");
 
         String fileName = sd.getFileName();
-        if (fileName == null)
-            return;
-
         String fileDir = sd.getDirectory();
 
+        if (fileName == null || fileDir == null)
+            return;
+
+
+        // Get header informations from current images stacks
+        magic_number = "HOLO";
+        version = 2;
+        bit_depth = imp.getBitDepth();
+        width = imp.getWidth();
+        height = imp.getHeight();
+        num_frames = imp.getStackSize();
+        data_size = (long)width * height * num_frames * (bit_depth / 8);
+        endianness = 0;
+
+        frame_size = width * height * (bit_depth / 8);
+
+        // Check the extracted informations
+        IJ.showStatus("Checking data integrity...");
+        if ((error_code = check_data_integrity()) != 0)
+        {
+            display_message(error_code);
+            return;
+        }
+
         file = new File(fileDir + fileName);
+        file.delete();
         raFile = new RandomAccessFile(file, "rw");
 
         // Writing 64-byte binary header
         raFile.seek(0);
-        magic_number = "HOLO";
         writeString(magic_number);
 
         raFile.seek(4);
-        version = 2;
         writeInt(version);
 
         raFile.seek(6);
-        bit_depth = imp.getBitDepth();
         writeInt(bit_depth);
 
         raFile.seek(8);
-        width = imp.getWidth();
         writeInt(width);
 
         raFile.seek(12);
-        height = imp.getHeight();
         writeInt(height);
 
         raFile.seek(16);
-        num_frames = imp.getStackSize();
         writeInt(num_frames);
 
         raFile.seek(20);
-        data_size = (long)width * height * num_frames * (bit_depth / 8);
         writeLong(data_size);
 
         raFile.seek(28);
-        endianness = 0;
         writeInt(endianness);
 
         raFile.seek(29);
@@ -105,24 +119,17 @@ public class Write_Holo implements PlugIn
         Arrays.fill(padding, (byte)0);
         raFile.write(padding);
 
-        // Check the extracted informations
-        IJ.showStatus("Checking data integrity...");
-        if ((error_code = check_data_integrity()) != 0)
-        {
-            display_message(error_code);
-        }
-
         raFile.seek(63);
 
-        bufferWrite = new byte[(bit_depth / 8) * width * height];
+        bufferWrite = new byte[frame_size];
 
         for(int i = 0; i < num_frames; i++)
         {
             // Status bar
             IJ.showProgress((double)(i + 1) / num_frames);
 
-            raFile.seek(64 + height * width * (bit_depth / 8) * i);
-            writeByteFrame(i + 1);
+            raFile.seek(64 + frame_size * i);
+            writeByteFrame(i + 1); // Slice index begins at 1
         }
         raFile.close();
     }
@@ -150,29 +157,29 @@ public class Write_Holo implements PlugIn
         }
     }
 
-    final void writeString(String s) throws IOException
+    private void writeString(String s) throws IOException
     {
         raFile.write(s.getBytes());
     }
 
-    final void writeInt(int v) throws IOException
+    private void writeInt(int v) throws IOException
     {
-        raFile.write((byte) (v & 0xFF));
-        raFile.write((byte) ((v >>  8) & 0xFF));
-        raFile.write((byte) ((v >> 16) & 0xFF));
-        raFile.write((byte) ((v >> 24) & 0xFF));
+        raFile.write((byte)(v & 0xFF));
+        raFile.write((byte)((v >>  8) & 0xFF));
+        raFile.write((byte)((v >> 16) & 0xFF));
+        raFile.write((byte)((v >> 24) & 0xFF));
     }
 
-    final void writeLong(long v) throws IOException
+    private void writeLong(long v) throws IOException
     {
-        raFile.write((byte) (v & 0xFF));
-        raFile.write((byte) ((v >>  8) & 0xFF));
-        raFile.write((byte) ((v >> 16) & 0xFF));
-        raFile.write((byte) ((v >> 24) & 0xFF));
-        raFile.write((byte) ((v >> 32) & 0xFF));
-        raFile.write((byte) ((v >> 40) & 0xFF));
-        raFile.write((byte) ((v >> 48) & 0xFF));
-        raFile.write((byte) ((v >> 56) & 0xFF));
+        raFile.write((byte)(v & 0xFF));
+        raFile.write((byte)((v >>  8) & 0xFF));
+        raFile.write((byte)((v >> 16) & 0xFF));
+        raFile.write((byte)((v >> 24) & 0xFF));
+        raFile.write((byte)((v >> 32) & 0xFF));
+        raFile.write((byte)((v >> 40) & 0xFF));
+        raFile.write((byte)((v >> 48) & 0xFF));
+        raFile.write((byte)((v >> 56) & 0xFF));
     }
 
     private int check_data_integrity()
@@ -186,10 +193,8 @@ public class Write_Holo implements PlugIn
     {
         if (error_code == 1)
         {
-            IJ.showMessage("ERROR: " + plugin_name, "Not supporting bit Depth: " + String.valueOf(bit_depth));
+            IJ.showMessage("ERROR: " + plugin_name, "Bit depth not supported: " + String.valueOf(bit_depth));
             IJ.showMessage("Please edit the image type");
         }
     }
-
-
 }
