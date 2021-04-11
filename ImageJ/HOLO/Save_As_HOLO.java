@@ -15,7 +15,7 @@ import java.util.*;
  *  Find more at: https://ftp.espci.fr/incoming/Atlan/holovibes/holo/HoloFileSpecification.pdf
  */
 
-public class Write_Holo implements PlugIn
+public class Save_As_HOLO implements PlugIn
 {
     private ImagePlus           imp;
     private RandomAccessFile    raFile;

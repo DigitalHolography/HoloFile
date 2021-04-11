@@ -1,8 +1,11 @@
-from os.path import basename
+#from os.path import basename
 from os.path import getsize
-from typing import BinaryIO
+#from typing import BinaryIO
 from struct import pack, unpack
 from typing import List
+# import cv2 # si tu veux utiliser cette bilblio il faut l'installer, si tu y arrives pas dis le moi je t'aiderai 
+# import math # bilibo peut etre pas utile .... 
+import matplotlib.pyplot as plt
 
 holo_header_version = 3
 holo_header_size = 64
@@ -27,6 +30,11 @@ class HoloFile:
         self.bytes_per_pixel = header[2]
         self.nb_images = header[3]
         self.path = path
+        # print(self.width)
+        # print(self.height)
+        # print(self.bytes_per_pixel)
+        # print(self.nb_images)
+        # print(self.path)
 
 class HoloFileReader(HoloFile):
     def __init__(self, path: str):
@@ -42,6 +50,7 @@ class HoloFileReader(HoloFile):
 
         header = (w, h, int(bits_per_pixel / 8), img_nb)
         HoloFile.__init__(self, path, header)
+        # print(header)
 
     def get_all(self) -> bytes:
         data_total_size = self.nb_images * self.height * self.width * self.bytes_per_pixel
@@ -53,7 +62,9 @@ class HoloFileReader(HoloFile):
 
     def get_all_frames(self) -> bytes:
         data_total_size = self.nb_images * self.height * self.width * self.bytes_per_pixel
+        # cv2.imshow('', self.io.read(data_total_size))
         return self.io.read(data_total_size)
+        # HoloFileReader.implay(self.io.read(data_total_size), 20)
 
     def get_frame(self) -> List[int]:
         data = []
@@ -61,13 +72,23 @@ class HoloFileReader(HoloFile):
             pixel = self.io.read(self.bytes_per_pixel)
             pixel_int = int.from_bytes(pixel, byteorder='big', signed=False)
             data.append(pixel_int)
-        return data
+        HoloFileReader.implay(self, data, 20)
+        # return data
 
     def get_frame_by_lines(self) -> bytes:
         data = []
         for _ in range(self.height):
             data.append(self.io.read(self.bytes_per_pixel * self.width))
         return data
+    
+    def implay(self, volume, fps, ax=None, **kw):
+        if not ax:
+            ax = plt.gca()
+            # num_frames = volume.shape[-1]
+            for i in range(self.nb_images):
+                ax.cla()
+                ax.imshow(volume[...,i], **kw)
+                plt.pause(1. / fps)
 
     def close(self):
         self.io.close()
