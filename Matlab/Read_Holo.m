@@ -1,4 +1,4 @@
-function Read_Holo()
+function Output = Read_Holo(input_file)
 
 %  Opens .holo image sequences.
 % 
@@ -7,17 +7,26 @@ function Read_Holo()
 % 
 %   Find more at: https://ftp.espci.fr/incoming/Atlan/holovibes/holo/HoloFileSpecification.pdf
  
-%% Open .holo file 
-[filename,path] = uigetfile('*.holo');
+% Open .holo file 
 
-if isequal(filename,0)
-    disp('User selected Cancel');
-else
-    disp(['User selected ', fullfile(path, filename)]);
+%% Check if input_file is empty or not 
+switch nargin 
+    case 1 
+        path_filename = input_file;              
+    otherwise 
+        [filename,path] = uigetfile('*.holo');
+
+        if isequal(filename, 0)
+            disp('User selected Cancel');
+        else
+            disp(['User selected ', fullfile(path, filename)]);
+        end
+
+        path_filename = fullfile(path, filename);
 end
 
 %% Parse header 
-header_mmap = memmapfile(fullfile(path, filename), 'Format', ...
+header_mmap = memmapfile(path_filename, 'Format', ...
             {'uint8',   4,  'magic_number';...
              'uint16',  1,  'version';...
              'uint16',  1,  'bit_depth';...
@@ -55,9 +64,9 @@ elseif bit_depth == 16
 end
 
 %% Parse images
-fd = fopen(fullfile(path, filename), 'r');
+fd = fopen(path_filename, 'r');
 
-offset = 64; % the header is 64-bit longer 
+header_size = 64; % the header is 64-bit longer 
 
 frame_batch = zeros(frame_width, frame_height, num_frames, type);    
 
@@ -66,14 +75,14 @@ frame_size = frame_width * frame_height * uint32(bit_depth / 8);
 width_range = 1:frame_width;
 height_range = 1:frame_height; 
 
-fseek(fd, offset, 'bof');
+fseek(fd, header_size, 'bof');
 
 wait = waitbar(0, 'Please wait...');
 
 for i = 1:num_frames
     waitbar(i / num_frames, wait);
     
-    fseek(fd, offset + frame_size * (i-1), 'bof'); 
+    fseek(fd, header_size + frame_size * (i-1), 'bof'); 
     
     if bit_depth == 8
         frame_batch(width_range, height_range, i) = reshape(fread(fd, frame_width * frame_height, 'uint8=>uint8', endian), frame_width, frame_height);
@@ -85,8 +94,13 @@ end
 
 fclose(fd);
 
-%% Play image sequences
-implay(rot90(flipud(frame_batch(:, :, :)),3), 30); %30 fps arbitrary value
+%% Play image sequences or fill the Output 
+switch nargout 
+    case 1 
+        Output = frame_batch; 
+    otherwise
+        implay(rot90(flipud(frame_batch(:, :, :)),3), 30); %30 fps arbitrary value      
+end
 
 close(wait);
 
