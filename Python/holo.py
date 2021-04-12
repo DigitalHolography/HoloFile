@@ -1,13 +1,8 @@
-#from os.path import basename
 from os.path import getsize
-#from typing import BinaryIO
 from struct import pack, unpack
 from typing import List
-# import cv2 # si tu veux utiliser cette bilblio il faut l'installer, si tu y arrives pas dis le moi je t'aiderai 
-# import math # bilibo peut etre pas utile .... 
-import matplotlib.pyplot as plt
 
-holo_header_version = 3
+holo_header_version = 2 
 holo_header_size = 64
 holo_header_padding_size = 35
 
@@ -36,7 +31,7 @@ class HoloFile:
         # print(self.nb_images)
         # print(self.path)
 
-class HoloFileReader(HoloFile):
+class FileReader(HoloFile):
     def __init__(self, path: str):
         self.path = path
         self.io = open(path, 'rb')
@@ -44,9 +39,9 @@ class HoloFileReader(HoloFile):
         self.io.read(holo_header_padding_size)
 
         holo, _version, bits_per_pixel, w, h, img_nb, _data_size, _endianness = unpack(struct_format, header_bytes)
-        #if holo.decode('ascii') != "HOLO":
-           # self.io.close()
-            #raise Exception('Cannot read holo file')
+        if holo.decode('ascii') != "HOLO":
+            self.io.close()
+            raise Exception('Cannot read holo file')
 
         header = (w, h, int(bits_per_pixel / 8), img_nb)
         HoloFile.__init__(self, path, header)
@@ -64,7 +59,6 @@ class HoloFileReader(HoloFile):
         data_total_size = self.nb_images * self.height * self.width * self.bytes_per_pixel
         # cv2.imshow('', self.io.read(data_total_size))
         return self.io.read(data_total_size)
-        # HoloFileReader.implay(self.io.read(data_total_size), 20)
 
     def get_frame(self) -> List[int]:
         data = []
@@ -72,28 +66,18 @@ class HoloFileReader(HoloFile):
             pixel = self.io.read(self.bytes_per_pixel)
             pixel_int = int.from_bytes(pixel, byteorder='big', signed=False)
             data.append(pixel_int)
-        HoloFileReader.implay(self, data, 20)
-        # return data
+        return data
 
     def get_frame_by_lines(self) -> bytes:
         data = []
         for _ in range(self.height):
             data.append(self.io.read(self.bytes_per_pixel * self.width))
         return data
-    
-    def implay(self, volume, fps, ax=None, **kw):
-        if not ax:
-            ax = plt.gca()
-            # num_frames = volume.shape[-1]
-            for i in range(self.nb_images):
-                ax.cla()
-                ax.imshow(volume[...,i], **kw)
-                plt.pause(1. / fps)
 
     def close(self):
         self.io.close()
 
-class HoloFileWriter(HoloFile):
+class FileWriter(HoloFile):
     def __init__(self, path: str, header: (int, int, int, int), data: bytes):
         HoloFile.__init__(self, path, header)
         self.io = open(path, 'wb')
