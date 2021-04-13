@@ -128,7 +128,7 @@ public class Save_As_HOLO implements PlugIn
             // Status bar
             IJ.showProgress((double)(i + 1) / num_frames);
 
-            raFile.seek(64 + frame_size * i);
+            raFile.seek(64 + (long)frame_size * i);
             writeByteFrame(i + 1); // Slice index begins at 1
         }
         raFile.close();
