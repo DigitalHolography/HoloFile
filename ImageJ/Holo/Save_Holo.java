@@ -42,6 +42,11 @@ public class Save_Holo implements PlugIn
         try
         {
             imp = WindowManager.getCurrentImage();
+            if (imp == null)
+            {
+                IJ.showMessage("INFO: " + plugin_name, "To save as holo, first open an image.");
+                return ;
+            }
             writeImage(imp);
         }
         catch(IOException e)
