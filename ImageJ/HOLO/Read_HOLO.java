@@ -158,11 +158,10 @@ public class Read_HOLO extends ImagePlus implements PlugIn
 
             if (version == 2 || version == 1)
             {
-                data_size  = (u_hdr[20] <<  0) | (u_hdr[21] <<  8) | (u_hdr[22] << 16) | (u_hdr[23] << 24)
-                           | (u_hdr[24] << 32) | (u_hdr[25] << 40) | (u_hdr[26] << 48) | (u_hdr[27] << 56);
+                data_size  = u_hdr[20] | (u_hdr[21] <<  8) | (u_hdr[22] << 16) | (u_hdr[23] << 24)
+                           | ((long)u_hdr[24] << 32) | ((long)u_hdr[25] << 40) | ((long)u_hdr[26] << 48) | ((long)u_hdr[27] << 56);
                 endianness = u_hdr[28];
             }
-
         }
         catch (IOException e)
         {
