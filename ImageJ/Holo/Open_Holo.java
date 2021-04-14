@@ -35,7 +35,7 @@ public class Open_Holo extends ImagePlus implements PlugIn
     public void run(String arg)
     {
         // Open dialog for file selection
-        OpenDialog  od = new OpenDialog("Open a .holo file...", arg);
+        OpenDialog  od = new OpenDialog("Open a holo file...", arg);
 
         String      directory = od.getDirectory();
         String      filename = od.getFileName();
