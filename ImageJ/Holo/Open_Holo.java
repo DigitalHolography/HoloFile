@@ -13,9 +13,9 @@ import java.nio.*;
  *  Find more at: https://ftp.espci.fr/incoming/Atlan/holovibes/holo/HoloFileSpecification.pdf
  */
 
-public class Read_HOLO extends ImagePlus implements PlugIn
+public class Open_Holo extends ImagePlus implements PlugIn
 {
-    private String  plugin_name = "Read Holo";
+    private String  plugin_name = "Open_Holo";
     private int     max_header_size = 64;   // Max header size in holo file
     private int     nb_frame_pixel;         // Number of pixel in a frame (equals to: width * height)
     private int     frame_size;             // Size in bytes of a frame (equals to: width * height * bit_depth)

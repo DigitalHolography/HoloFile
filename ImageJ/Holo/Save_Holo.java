@@ -15,12 +15,12 @@ import java.util.*;
  *  Find more at: https://ftp.espci.fr/incoming/Atlan/holovibes/holo/HoloFileSpecification.pdf
  */
 
-public class Save_As_HOLO implements PlugIn
+public class Save_Holo implements PlugIn
 {
     private ImagePlus           imp;
     private RandomAccessFile    raFile;
 
-    private String              plugin_name = "Write Holo";
+    private String              plugin_name = "Save_Holo";
     private int                 frame_size;         // Size in bytes of a frame (equals to: width * height * bit_depth)
 
     // Header variables
