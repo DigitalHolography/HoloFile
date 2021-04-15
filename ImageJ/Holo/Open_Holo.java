@@ -112,7 +112,7 @@ public class Open_Holo extends ImagePlus implements PlugIn
         try
         {
             byte[]  buf   = new byte[max_header_size];
-            short[] u_hdr = new short[max_header_size];
+            long[]  u_hdr = new long[max_header_size];
             int     i;
             int     read_bytes = 0;
 
@@ -125,8 +125,8 @@ public class Open_Holo extends ImagePlus implements PlugIn
             for (i = 0; i < 6; ++i)
                 u_hdr[i] = (short)(buf[i] & 0xFF);
 
-            magic_number = u_hdr[0] | (u_hdr[1] << 8) | (u_hdr[2] << 16) | (u_hdr[3] << 24);
-            version      = u_hdr[4] | (u_hdr[5] << 8);
+            magic_number = (int)(u_hdr[0] | (u_hdr[1] << 8) | (u_hdr[2] << 16) | (u_hdr[3] << 24));
+            version      = (int)(u_hdr[4] | (u_hdr[5] << 8));
 
             // Reading last bytes from header
             if (version == 2 || version == 1)
@@ -142,15 +142,15 @@ public class Open_Holo extends ImagePlus implements PlugIn
                     throw new IOException("Error reading file (header)");
             }
 
-            // Converting values to unsigned
+            // Converting values to unsigned and casting to long to avoid shift overflow
             for (i = 0; i < max_header_size; ++i)
-                u_hdr[i] = (short)(buf[i] & 0xFF);
+                u_hdr[i] = (long)(buf[i] & 0xFF);
 
             // Extracting values
-            bit_depth  = u_hdr[ 6] | (u_hdr[ 7] << 8);
-            width      = u_hdr[ 8] | (u_hdr[ 9] << 8) | (u_hdr[10] << 16) | (u_hdr[11] << 24);
-            height     = u_hdr[12] | (u_hdr[13] << 8) | (u_hdr[14] << 16) | (u_hdr[15] << 24);
-            num_frames = u_hdr[16] | (u_hdr[17] << 8) | (u_hdr[18] << 16) | (u_hdr[19] << 24);
+            bit_depth  = (int)(u_hdr[ 6] | (u_hdr[ 7] << 8));
+            width      = (int)(u_hdr[ 8] | (u_hdr[ 9] << 8) | (u_hdr[10] << 16) | (u_hdr[11] << 24));
+            height     = (int)(u_hdr[12] | (u_hdr[13] << 8) | (u_hdr[14] << 16) | (u_hdr[15] << 24));
+            num_frames = (int)(u_hdr[16] | (u_hdr[17] << 8) | (u_hdr[18] << 16) | (u_hdr[19] << 24));
 
             // If version == 0
             data_size  = (long)width * height * num_frames * (bit_depth / 8);
@@ -158,9 +158,9 @@ public class Open_Holo extends ImagePlus implements PlugIn
 
             if (version == 2 || version == 1)
             {
-                data_size  = u_hdr[20] | (u_hdr[21] <<  8) | (u_hdr[22] << 16) | (u_hdr[23] << 24)
-                           | ((long)u_hdr[24] << 32) | ((long)u_hdr[25] << 40) | ((long)u_hdr[26] << 48) | ((long)u_hdr[27] << 56);
-                endianness = u_hdr[28];
+                data_size  = (long)(u_hdr[20] | (u_hdr[21] <<  8) | (u_hdr[22] << 16) | (u_hdr[23] << 24)
+                           | (u_hdr[24] << 32) | (u_hdr[25] << 40) | (u_hdr[26] << 48) | (u_hdr[27] << 56));
+                endianness = (int)(u_hdr[28]);
             }
         }
         catch (IOException e)
