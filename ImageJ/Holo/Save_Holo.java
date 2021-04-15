@@ -90,6 +90,7 @@ public class Save_Holo implements PlugIn
             return;
         }
 
+        IJ.showStatus("Writing header...");
         file = new File(fileDir + fileName);
         file.delete();
         raFile = new RandomAccessFile(file, "rw");
@@ -131,6 +132,7 @@ public class Save_Holo implements PlugIn
         for(int i = 0; i < num_frames; i++)
         {
             // Status bar
+            IJ.showStatus("Writing images...");
             IJ.showProgress((double)(i + 1) / num_frames);
 
             raFile.seek(64 + (long)frame_size * i);
