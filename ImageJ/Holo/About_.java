@@ -9,7 +9,7 @@ import ij.plugin.*;
 
 public class About_ implements PlugIn
 {
-    private String version = "1.0.0";
+    private String version = "1.0.1";
     private String holo_file_specification_link = "https://ftp.espci.fr/incoming/Atlan/holovibes/holo/HoloFileSpecification.pdf";
     private String github_repository = "https://github.com/holostuff/ImportExportScriptsForHoloFiles/";
     
