@@ -58,7 +58,8 @@ public class Save_Holo implements PlugIn
 
     private void writeImage(ImagePlus imp) throws IOException
     {
-        int error_code;
+        int   error_code;
+        float progress;
 
         // Open dialog to save a file in .holo
         SaveDialog sd = new SaveDialog("Save as HOLO...", imp.getTitle(), ".holo");
@@ -131,9 +132,11 @@ public class Save_Holo implements PlugIn
 
         for(int i = 0; i < num_frames; i++)
         {
-            // Status bar
-            IJ.showStatus("Writing images...");
-            IJ.showProgress((double)(i + 1) / num_frames);
+            // Status and Progress Bar
+            progress = (i + 1) / (float)num_frames;
+            IJ.showStatus("Writing images... " + String.valueOf(i + 1) + "/" + String.valueOf(num_frames)
+                                               + " (" + String.format("%.2f", progress * 100) + "%)");
+            IJ.showProgress(progress);
 
             raFile.seek(64 + (long)frame_size * i);
             writeByteFrame(i + 1); // Slice index begins at 1

@@ -59,6 +59,7 @@ public class Open_Holo extends ImagePlus implements PlugIn
             }
             is.close();
             setStack(filename, stack);
+            IJ.showProgress(1.f);
             show();
         }
         catch (IOException e)
@@ -178,13 +179,15 @@ public class Open_Holo extends ImagePlus implements PlugIn
             byte[]      batch_slice = new byte[frame_size * batch_read];
             int         read_bytes;
             int         read_images;
-            float       percent;
+            float       progress;
 
             for (int i = 0; i < num_frames; i += read_images)
             {
-                // Status bar
-                percent = (i / (float)num_frames) * 100;
-                IJ.showStatus("Reading images... " + String.valueOf(i) + "/" + String.valueOf(num_frames) + " (" + String.format("%.2f", percent) + "%)");
+                // Status and Progress Bar
+                progress = i / (float)num_frames;
+                IJ.showStatus("Reading images... " + String.valueOf(i + 1) + "/" + String.valueOf(num_frames)
+                                                   + " (" + String.format("%.2f", progress * 100) + "%)");
+                IJ.showProgress(progress);
 
                 // Read "batch_read" frames
                 read_bytes = is.read(batch_slice);
