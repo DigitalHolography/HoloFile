@@ -9,7 +9,7 @@ import ij.plugin.*;
 
 public class About_ implements PlugIn
 {
-    private String version = "1.0.3";
+    private String version = "1.0.4";
     private String holo_file_specification_link = "https://ftp.espci.fr/incoming/Atlan/holovibes/holo/HoloFileSpecification.pdf";
     private String github_repository = "https://github.com/holostuff/ImportExportScriptsForHoloFiles/";
     
@@ -20,7 +20,7 @@ public class About_ implements PlugIn
         + "<br/>"
         + "<center>This set of plugins aims to facilitate the opening and saving of holo files.</center>"
         + "<br/>"
-        + "<center>Checkout our <a href=" + github_repository + ">github</a> !</center>"
+        + "<center>Check out our <a href=" + github_repository + ">github</a> !</center>"
         + "<center>Find more at: " + "<a href=" + holo_file_specification_link + ">HoloFileSpecification</a></center>");
     }
 }
