@@ -1,6 +1,6 @@
 from os.path import getsize
 from struct import pack, unpack
-from typing import List
+# from typing import List
 
 holo_header_version = 2 
 holo_header_size = 64
@@ -59,20 +59,6 @@ class FileReader(HoloFile):
         data_total_size = self.nb_images * self.height * self.width * self.bytes_per_pixel
         # cv2.imshow('', self.io.read(data_total_size))
         return self.io.read(data_total_size)
-
-    def get_frame(self) -> List[int]:
-        data = []
-        for _ in range(self.height * self.width):
-            pixel = self.io.read(self.bytes_per_pixel)
-            pixel_int = int.from_bytes(pixel, byteorder='big', signed=False)
-            data.append(pixel_int)
-        return data
-
-    def get_frame_by_lines(self) -> bytes:
-        data = []
-        for _ in range(self.height):
-            data.append(self.io.read(self.bytes_per_pixel * self.width))
-        return data
 
     def close(self):
         self.io.close()
