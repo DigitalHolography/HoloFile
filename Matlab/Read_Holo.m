@@ -25,6 +25,9 @@ switch nargin
         path_filename = fullfile(path, filename);
 end
 
+wait = waitbar(0, 'Parse header...');
+pause(.5);
+
 %% Parse header 
 header_mmap = memmapfile(path_filename, 'Format', ...
             {'uint8',   4,  'magic_number';...
@@ -63,6 +66,9 @@ elseif bit_depth == 16
     type = 'uint16';
 end
 
+waitbar(1/4, wait, 'Parse images...');
+pause(.5);
+
 %% Parse images
 fd = fopen(path_filename, 'r');
 
@@ -77,10 +83,11 @@ height_range = 1:frame_height;
 
 fseek(fd, header_size, 'bof');
 
-wait = waitbar(0, 'Please wait...');
+waitbar(2/4, wait, 'Parse images...');
+pause(.5);
 
 for i = 1:num_frames
-    waitbar(i / num_frames, wait);
+    waitbar((2 + double(i / num_frames)) / 4, wait, 'Please wait...');
     
     fseek(fd, header_size + frame_size * (i-1), 'bof'); 
     
@@ -88,11 +95,12 @@ for i = 1:num_frames
         frame_batch(width_range, height_range, i) = reshape(fread(fd, frame_width * frame_height, 'uint8=>uint8', endian), frame_width, frame_height);
     elseif bit_depth == 16
         frame_batch(width_range, height_range, i) = reshape(fread(fd, frame_width * frame_height, 'uint16=>uint16', endian), frame_width, frame_height);
-    end  
-    
+    end      
 end
 
 fclose(fd);
+
+waitbar(4/4, wait, 'Movie Player is opening...');
 
 %% Play image sequences or fill the Output 
 switch nargout 
@@ -103,5 +111,4 @@ switch nargout
 end
 
 close(wait);
-
 end
