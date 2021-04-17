@@ -18,8 +18,8 @@ switch nargin
             disp(['User selected ', fullfile(path, filename)]);
         end
         path_filename = fullfile(path, filename);
-    otherwise  
-        path_filename = filepath; 
+    otherwise 
+        path_filename = [filepath, '.holo']; 
 end
 
 %% Parse input_array
