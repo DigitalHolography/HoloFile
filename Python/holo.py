@@ -1,6 +1,6 @@
 from os.path import getsize
 from struct import pack, unpack
-# from typing import List
+import numpy as np
 
 holo_header_version = 2 
 holo_header_size = 64
@@ -25,11 +25,6 @@ class HoloFile:
         self.bytes_per_pixel = header[2]
         self.nb_images = header[3]
         self.path = path
-        # print(self.width)
-        # print(self.height)
-        # print(self.bytes_per_pixel)
-        # print(self.nb_images)
-        # print(self.path)
 
 class FileReader(HoloFile):
     def __init__(self, path: str):
@@ -45,20 +40,43 @@ class FileReader(HoloFile):
 
         header = (w, h, int(bits_per_pixel / 8), img_nb)
         HoloFile.__init__(self, path, header)
-        # print(header)
 
     def get_all(self) -> bytes:
         data_total_size = self.nb_images * self.height * self.width * self.bytes_per_pixel
         self.io.seek(0)
         h = self.io.read(holo_header_size)
-        c = self.io.read(data_total_size)
+        c = self.get_all_frames()
         f = self.io.read(getsize(self.path) - holo_header_size - data_total_size)
         return h, c, f
 
     def get_all_frames(self) -> bytes:
-        data_total_size = self.nb_images * self.height * self.width * self.bytes_per_pixel
-        # cv2.imshow('', self.io.read(data_total_size))
-        return self.io.read(data_total_size)
+        frame_size = self.height * self.width * self.bytes_per_pixel
+        frame_res = self.height * self.width
+        if self.bytes_per_pixel == 1:
+            data_type = np.uint8
+        elif self.bytes_per_pixel == 2:
+            data_type = np.uint16
+        frame_batch = np.zeros((frame_res, self.nb_images), dtype = data_type) 
+        for i in range(self.nb_images): 
+            self.update_loading_bar(i, self.nb_images)
+            self.io.seek(holo_header_size + frame_size * i)
+            data = self.io.read(frame_size)
+            for j in range(frame_res):
+                if self.bytes_per_pixel == 1:
+                    frame_batch[j,i] = data[j] 
+                elif self.bytes_per_pixel == 2:
+                    frame_batch[j,i] = (data[j * 2]) + (data[j * 2 + 1] << 8)        
+        return frame_batch   
+    
+    def update_loading_bar(self, index: int, total: int):
+        if index == total - 1:
+            print("\r[..........] 100.00%")
+            return
+        bar_index = float((index / total))
+        print("\r[", end='')
+        print('.' * int(bar_index * 10), end='')
+        print(' ' * (10 - int(bar_index * 10)), end='')
+        print('] ' + "%.2f" % (round(bar_index * 100, 2)) + '%', end='', flush=True)
 
     def close(self):
         self.io.close()
