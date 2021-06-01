@@ -3,16 +3,16 @@ import ij.plugin.*;
 
 /**
  *  This the section About of the Holo plugin set.
- * 
+ *
  *  Find more at: https://ftp.espci.fr/incoming/Atlan/holovibes/holo/HoloFileSpecification.pdf
  */
 
 public class About_ implements PlugIn
 {
-    private String version = "1.0.5";
+    private String version = "1.0.6";
     private String holo_file_specification_link = "https://ftp.espci.fr/incoming/Atlan/holovibes/holo/HoloFileSpecification.pdf";
     private String github_repository = "https://github.com/DigitalHolography/ImportExportScriptsForHoloFiles";
-    
+
     public void run(String arg)
     {
         IJ.showMessage("About", "<html>"
