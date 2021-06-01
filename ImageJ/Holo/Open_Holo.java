@@ -99,7 +99,7 @@ public class Open_Holo extends ImagePlus implements PlugIn
             return 1;
         if (version != 2 && version != 1 && version != 0) // TODO: Manage other version of holo files
             return 2;
-        if (bit_depth != 8 && bit_depth != 16)
+        if (bit_depth != 8 && bit_depth != 16 && bit_depth != 24)
             return 3;
         if (data_size != (long)frame_size * num_frames)
             return 4;
@@ -200,6 +200,7 @@ public class Open_Holo extends ImagePlus implements PlugIn
                 {
                     byte[]  slice8 = new byte[frame_size];
                     short[] slice16 = new short[nb_frame_pixel];
+                    int[] slice24 = new int[frame_size];
 
                     // Convert the frame in the desired bit depth and append to the stack
                     if (bit_depth == 8)
@@ -220,6 +221,20 @@ public class Open_Holo extends ImagePlus implements PlugIn
                                 slice16[pixel] = (short)((batch_slice[(j * frame_size) + (pixel * 2 + 1)] & 0xFF) | ((batch_slice[(j * frame_size) + (pixel * 2 + 0)] & 0xFF) << 8));
                         }
                         stack.addSlice("", slice16);
+                    }
+                    if (bit_depth == 24)
+                    {
+                        if (endianness == 0)
+                        {
+                            for (int pixel = 0; pixel < nb_frame_pixel; ++pixel)
+                                slice24[pixel] = (int)(((batch_slice[(j * frame_size) + (pixel * 3 + 0)] & 0xFF) << 16) | ((batch_slice[(j * frame_size) + (pixel * 3 + 1)] & 0xFF) << 8) | (batch_slice[(j * frame_size) + (pixel * 3 + 2)] & 0xFF));
+                        }
+                        else if (endianness == 1)
+                        {
+                            for (int pixel = 0; pixel < nb_frame_pixel; ++pixel)
+                                slice24[pixel] = (int)((batch_slice[(j * frame_size) + (pixel * 3 + 0)] & 0xFF) | ((batch_slice[(j * frame_size) + (pixel * 3 + 1)] & 0xFF) << 8) | ((batch_slice[(j * frame_size) + (pixel * 3 + 2)] & 0xFF) << 16));
+                        }
+                        stack.addSlice("", slice24);
                     }
                 }
             }
