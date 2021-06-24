@@ -45,12 +45,12 @@ if ~isequal(header_mmap.Data.magic_number', unicode2native('HOLO'))
     error('Bad holo file.');
 end
 
-%magic_number = header_mmap.Data.magic_number;      % Magic number, always set to "HOLO"
-%version = header_mmap.Data.version;                % Version of holo file
+% magic_number = header_mmap.Data.magic_number;     % Magic number, always set to "HOLO"
+% version = header_mmap.Data.version;               % Version of holo file
 num_frames = header_mmap.Data.num_frames;           % Total number of frames in raw data
 frame_width = header_mmap.Data.width;               % Width of a frame
 frame_height = header_mmap.Data.height;             % Height of a frame
-%data_size = header_mmap.Data.total_size;           % Total raw data size (always equals to width * height * num_frames * (bit_depth / 8))
+% data_size = header_mmap.Data.total_size;          % Total raw data size (always equals to width * height * num_frames * (bit_depth / 8))
 bit_depth = header_mmap.Data.bit_depth;             % Bit depth of raw data
 endianness = header_mmap.Data.endianness;           % Endianness of raw data
 
@@ -77,10 +77,7 @@ header_size = 64; % the header is 64-bit longer
 frame_batch = zeros(frame_width, frame_height, num_frames, type);    
 
 frame_size = frame_width * frame_height * uint32(bit_depth / 8);
-
-width_range = 1:frame_width;
-height_range = 1:frame_height; 
-
+ 
 fseek(fd, header_size, 'bof');
 
 waitbar(2/4, wait, 'Parse images...');
@@ -92,9 +89,9 @@ for i = 1:num_frames
     fseek(fd, header_size + frame_size * (i-1), 'bof'); 
     
     if bit_depth == 8
-        frame_batch(width_range, height_range, i) = reshape(fread(fd, frame_width * frame_height, 'uint8=>uint8', endian), frame_width, frame_height);
+        frame_batch(:, :, i) = reshape(fread(fd, frame_width * frame_height, 'uint8=>uint8', endian), frame_width, frame_height);
     elseif bit_depth == 16
-        frame_batch(width_range, height_range, i) = reshape(fread(fd, frame_width * frame_height, 'uint16=>uint16', endian), frame_width, frame_height);
+        frame_batch(:, :, i) = reshape(fread(fd, frame_width * frame_height, 'uint16=>uint16', endian), frame_width, frame_height);
     end      
 end
 
