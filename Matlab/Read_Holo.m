@@ -72,11 +72,11 @@ pause(.5);
 %% Parse images
 fd = fopen(path_filename, 'r');
 
-header_size = 64; % the header is 64-bit longer 
+header_size = (64); % the header is 64-bit longer 
 
 frame_batch = zeros(frame_width, frame_height, num_frames, type);    
 
-frame_size = frame_width * frame_height * uint32(bit_depth / 8);
+frame_size = uint64(frame_width * frame_height * uint32(bit_depth / 8));
  
 fseek(fd, header_size, 'bof');
 
@@ -85,14 +85,14 @@ pause(.5);
 
 for i = 1:num_frames
     waitbar((2 + double(i / num_frames)) / 4, wait, 'Please wait...');
-    
-    fseek(fd, header_size + frame_size * (i-1), 'bof'); 
-    
+
+    fseek(fd, header_size + frame_size * uint64(i-1), 'bof');
+
     if bit_depth == 8
         frame_batch(:, :, i) = reshape(fread(fd, frame_width * frame_height, 'uint8=>uint8', endian), frame_width, frame_height);
     elseif bit_depth == 16
         frame_batch(:, :, i) = reshape(fread(fd, frame_width * frame_height, 'uint16=>uint16', endian), frame_width, frame_height);
-    end      
+    end  
 end
 
 fclose(fd);
