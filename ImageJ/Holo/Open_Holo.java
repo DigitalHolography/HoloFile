@@ -97,7 +97,7 @@ public class Open_Holo extends ImagePlus implements PlugIn
     {
         if (magic_number != 1330401096) // 1330401096 == "HOLO"
             return 1;
-        if (version != 2 && version != 1 && version != 0) // TODO: Manage other version of holo files
+        if (version != 4 && version != 2 && version != 1 && version != 0) // TODO: Manage other version of holo files
             return 2;
         if (bit_depth != 8 && bit_depth != 16 && bit_depth != 24)
             return 3;
@@ -130,7 +130,7 @@ public class Open_Holo extends ImagePlus implements PlugIn
             version      = (int)(u_hdr[4] | (u_hdr[5] << 8));
 
             // Reading last bytes from header
-            if (version == 2 || version == 1)
+            if (version == 4 || version == 2 || version == 1)
             {
                 read_bytes = is.read(buf, 6, 58); // 58 + 6 = 64 total header bytes
                 if (read_bytes != 58)
@@ -157,7 +157,7 @@ public class Open_Holo extends ImagePlus implements PlugIn
             data_size  = (long)width * height * num_frames * (bit_depth / 8);
             endianness = 0;
 
-            if (version == 2 || version == 1)
+            if (version == 4 || version == 2 || version == 1)
             {
                 data_size  = (long)(u_hdr[20] | (u_hdr[21] <<  8) | (u_hdr[22] << 16) | (u_hdr[23] << 24)
                            | (u_hdr[24] << 32) | (u_hdr[25] << 40) | (u_hdr[26] << 48) | (u_hdr[27] << 56));

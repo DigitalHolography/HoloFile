@@ -73,7 +73,7 @@ public class Save_Holo implements PlugIn
 
         // Get header informations from current images stacks
         magic_number = "HOLO";
-        version = 2;
+        version = 4;
         bit_depth = imp.getBitDepth();
         width = imp.getWidth();
         height = imp.getHeight();
