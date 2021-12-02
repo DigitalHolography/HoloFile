@@ -55,7 +55,7 @@ fd = fopen(path_filename, 'w');
 
 %%Write the header 
 fwrite(fd, 'HOLO');                         % Magic number, always set to "HOLO"
-fwrite(fd, 2, 'uint16');                    % Version of holo file
+fwrite(fd, 4, 'uint16');                    % Version of holo file
 fwrite(fd, bit_depth, 'uint16');            % Bit depth of data
 fwrite(fd, frame_width, 'uint32');          % Width of a frame
 fwrite(fd, frame_height, 'uint32');         % Height of a frame

@@ -2,7 +2,7 @@ from os.path import getsize
 from struct import pack, unpack
 import numpy as np
 
-holo_header_version = 2 
+holo_header_version = 4
 holo_header_size = 64
 holo_header_padding_size = 35
 
