@@ -18,6 +18,7 @@ switch nargin
 
         if isequal(filename, 0)
             disp('User selected Cancel');
+            return;
         else
             disp(['User selected ', fullfile(path, filename)]);
         end
