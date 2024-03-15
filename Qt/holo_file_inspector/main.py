@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QFileDialog, QTreeWidget, QTreeWidgetItem, QHeaderView, QLineEdit, QPlainTextEdit
+from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QFileDialog, QTreeWidget, QTreeWidgetItem, QHeaderView, QPlainTextEdit
 from PySide6.QtCore import Qt
 import sys
 import subprocess
@@ -12,7 +12,7 @@ class HoloFileReader(QWidget):
         self.jsonData = None  # Variable pour stocker les données JSON
         self.file = ""
         self.data_size = 0
-        self.appVersion = "1.2"
+        self.appVersion = "1.3"
         self.initUI()
 
     def initUI(self):
@@ -24,11 +24,6 @@ class HoloFileReader(QWidget):
         self.openButton.clicked.connect(self.openFileDialog)
         self.layout.addWidget(self.openButton)
 
-        self.saveModificationsButton = QPushButton('Save Modifications')
-        self.saveModificationsButton.clicked.connect(self.saveModifications)
-        self.saveModificationsButton.setEnabled(False)  # Activer ce bouton uniquement après le chargement des données JSON
-        self.layout.addWidget(self.saveModificationsButton)
-
         self.overwriteFooterButton = QPushButton('Overwrite Footer')
         self.overwriteFooterButton.clicked.connect(self.overwriteFooter)
         self.overwriteFooterButton.setEnabled(False)  # Désactivé jusqu'à ce qu'un fichier soit chargé et modifié
@@ -36,6 +31,7 @@ class HoloFileReader(QWidget):
 
         self.loadFooterButton = QPushButton('Load Footer')
         self.loadFooterButton.clicked.connect(self.loadFooter)
+        self.loadFooterButton.setEnabled(False)
         self.layout.addWidget(self.loadFooterButton)
 
         self.downloadJsonButton = QPushButton('Download JSON')
@@ -84,8 +80,6 @@ class HoloFileReader(QWidget):
         footerData = self.collectFooterData()  # Utilisez cette méthode pour récupérer uniquement les données du footer
         if footerData is not None:
             self.jsonData = footerData
-            self.saveModificationsButton.setEnabled(False)  # Désactiver le bouton une fois les modifications sauvegardées
-            self.overwriteFooterButton.setEnabled(True)
             self.logMessage("Modifications saved localy.")
 
     def collectFooterData(self):
@@ -128,6 +122,8 @@ class HoloFileReader(QWidget):
         if magic_number.decode('utf-8') != 'HOLO':
             self.logMessage("Not a '.holo' file.")
             return
+
+        self.loadFooterButton.setEnabled(True)
 
         magic_number = magic_number.decode('utf-8')
         footer = self.readFooter(filePath, total_data_size)
@@ -196,10 +192,10 @@ class HoloFileReader(QWidget):
                     # Ajoutez le nouveau footer chargé
                     self.addItems(self.jsonView.invisibleRootItem(), {"Footer": self.jsonData})
 
-                    self.saveModificationsButton.setEnabled(True)  # Permettre de sauvegarder les modifications
-                    self.overwriteFooterButton.setEnabled(False)  # Permettre l'overwrite du footer dans le fichier
                 except json.JSONDecodeError as e:
                     self.logMessage(f"Error loading JSON: {e}")
+
+        self.overwriteFooter()
 
     def downloadJson(self):
             if self.jsonData is not None:
@@ -223,6 +219,7 @@ class HoloFileReader(QWidget):
 
     def overwriteFooter(self):
         total_data_size = self.data_size
+        self.saveModifications()
 
         # Ouvrez le fichier en mode 'r+b' pour lire/écrire sans effacer le contenu
         with open(self.file, 'r+b') as file:
@@ -256,15 +253,15 @@ class HoloFileReader(QWidget):
             key = item.text(0)  # La clé de l'élément modifié
             newValue = item.text(1)  # La nouvelle valeur
             if self.collectFooterData() == self.jsonData:
-                self.saveModificationsButton.setEnabled(False)
-            else:
-                self.saveModificationsButton.setEnabled(True)
                 self.overwriteFooterButton.setEnabled(False)
-
+            else:
+                self.overwriteFooterButton.setEnabled(True)
 
             self.logMessage(f"Item '{key}' changed to '{newValue}'.")
 
     def executeFile(self):
+
+        self.overwriteFooter()
         if not self.file:
             self.logMessage("No file loaded to execute.")
             return
