@@ -12,7 +12,7 @@ class HoloFileReader(QWidget):
         self.jsonData = None  # Variable pour stocker les données JSON
         self.file = ""
         self.data_size = 0
-        self.appVersion = "1.3"
+        self.appVersion = "1.4"
         self.initUI()
 
     def initUI(self):
@@ -29,12 +29,12 @@ class HoloFileReader(QWidget):
         self.overwriteFooterButton.setEnabled(False)  # Désactivé jusqu'à ce qu'un fichier soit chargé et modifié
         self.layout.addWidget(self.overwriteFooterButton)
 
-        self.loadFooterButton = QPushButton('Load Footer')
+        self.loadFooterButton = QPushButton('Load Footer (JSON)')
         self.loadFooterButton.clicked.connect(self.loadFooter)
         self.loadFooterButton.setEnabled(False)
         self.layout.addWidget(self.loadFooterButton)
 
-        self.downloadJsonButton = QPushButton('Download JSON')
+        self.downloadJsonButton = QPushButton('Save Footer (JSON)')
         self.downloadJsonButton.clicked.connect(self.downloadJson)
         self.downloadJsonButton.setEnabled(False)  # Désactiver le bouton jusqu'à ce que le JSON soit chargé
         self.layout.addWidget(self.downloadJsonButton)
@@ -80,7 +80,6 @@ class HoloFileReader(QWidget):
         footerData = self.collectFooterData()  # Utilisez cette méthode pour récupérer uniquement les données du footer
         if footerData is not None:
             self.jsonData = footerData
-            self.logMessage("Modifications saved localy.")
 
     def collectFooterData(self):
         root = self.jsonView.invisibleRootItem()
