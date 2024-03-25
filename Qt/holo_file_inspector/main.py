@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QFileDialog, QTreeWidget, QTreeWidgetItem, QHeaderView, QPlainTextEdit
+from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QFileDialog, QTreeWidget, QTreeWidgetItem, QHeaderView, QPlainTextEdit, QTabWidget, QHBoxLayout, QLabel, QLineEdit
 from PySide6.QtCore import Qt
 import sys
 import subprocess
@@ -9,54 +9,127 @@ import os
 class HoloFileReader(QWidget):
     def __init__(self):
         super().__init__()
-        self.jsonData = None  # Variable pour stocker les données JSON
+        self.jsonData = None
         self.file = ""
         self.data_size = 0
-        self.appVersion = "1.4"
+        self.appVersion = "1.5"
+        self.headerValues = {'Magic Number': 'HOLO', 'Version': 0, 'Bits per Pixel': 0, 'Image Width': 0, 'Image Height': 0, 'Image Number': 0, 'Total Data Size': 0, 'Endianness': 0}
         self.initUI()
+
 
     def initUI(self):
         self.setWindowTitle('Holo file inspector (' + self.appVersion + ' ver)')
-        self.setMinimumSize(600, 400)  # Définir une taille minimale pour la fenêtre
-        self.layout = QVBoxLayout()
+        self.setMinimumSize(600, 400)
+        layout = QVBoxLayout()
+
+        self.tabWidget = QTabWidget()
+        layout.addWidget(self.tabWidget)
+
+        self.fileTab = QWidget()
+        self.advancedTab = QWidget()
+
+        self.tabWidget.addTab(self.fileTab, "File")
+        self.tabWidget.addTab(self.advancedTab, "Advanced")
+
+        self.initFileTab()
+        self.initAdvancedTab()
+
+        self.logWindow = QPlainTextEdit()
+        self.logWindow.setReadOnly(True)
+        self.logWindow.setMaximumHeight(100)
+        layout.addWidget(self.logWindow)
+
+        self.setLayout(layout)
+
+
+    def initFileTab(self):
+        layout = QVBoxLayout(self.fileTab)
 
         self.openButton = QPushButton('Open Holo File')
         self.openButton.clicked.connect(self.openFileDialog)
-        self.layout.addWidget(self.openButton)
+        layout.addWidget(self.openButton)
 
         self.overwriteFooterButton = QPushButton('Overwrite Footer')
         self.overwriteFooterButton.clicked.connect(self.overwriteFooter)
-        self.overwriteFooterButton.setEnabled(False)  # Désactivé jusqu'à ce qu'un fichier soit chargé et modifié
-        self.layout.addWidget(self.overwriteFooterButton)
+        self.overwriteFooterButton.setEnabled(False)
+        layout.addWidget(self.overwriteFooterButton)
 
         self.loadFooterButton = QPushButton('Load Footer (JSON)')
         self.loadFooterButton.clicked.connect(self.loadFooter)
         self.loadFooterButton.setEnabled(False)
-        self.layout.addWidget(self.loadFooterButton)
+        layout.addWidget(self.loadFooterButton)
 
         self.downloadJsonButton = QPushButton('Save Footer (JSON)')
         self.downloadJsonButton.clicked.connect(self.downloadJson)
-        self.downloadJsonButton.setEnabled(False)  # Désactiver le bouton jusqu'à ce que le JSON soit chargé
-        self.layout.addWidget(self.downloadJsonButton)
+        self.downloadJsonButton.setEnabled(False)
+        layout.addWidget(self.downloadJsonButton)
+
+        self.removeJsonButton = QPushButton('Remove Footer')
+        self.removeJsonButton.clicked.connect(self.removeJson)
+        self.removeJsonButton.setEnabled(False)
+        layout.addWidget(self.removeJsonButton)
 
         self.jsonView = QTreeWidget()
         self.jsonView.setHeaderLabels(["Key", "Value"])
         self.jsonView.header().setSectionResizeMode(QHeaderView.ResizeToContents)
-        self.jsonView.itemDoubleClicked.connect(self.editItem)  # Connecter le double clic sur un élément à la méthode d'édition
+        self.jsonView.itemDoubleClicked.connect(self.editItem)
         self.jsonView.itemChanged.connect(self.onItemChanged)
-        self.layout.addWidget(self.jsonView)
-
-        self.logWindow = QPlainTextEdit()
-        self.logWindow.setReadOnly(True)  # Rendre le widget en lecture seule pour éviter la modification des logs
-        self.logWindow.setMaximumHeight(100)  # Définir une hauteur maximale pour le widget de log
-        self.layout.addWidget(self.logWindow)
+        layout.addWidget(self.jsonView)
 
         self.executeFileButton = QPushButton('Execute File')
         self.executeFileButton.clicked.connect(self.executeFile)
-        self.executeFileButton.setEnabled(False)  # Désactiver le bouton jusqu'à ce qu'un fichier soit chargé
-        self.layout.addWidget(self.executeFileButton)
+        self.executeFileButton.setEnabled(False)
+        layout.addWidget(self.executeFileButton)
 
-        self.setLayout(self.layout)
+
+    def initAdvancedTab(self):
+        layout = QVBoxLayout(self.advancedTab)
+        self.headerEdits = {}
+        for key in self.headerValues.keys():
+            row = QHBoxLayout()
+            label = QLabel(key + ':')
+            edit = QLineEdit(str(self.headerValues[key]))
+            edit.textChanged.connect(lambda value, key=key: self.onHeaderEditChanged(key, value))
+            self.headerEdits[key] = edit
+            row.addWidget(label)
+            row.addWidget(edit)
+            layout.addLayout(row)
+
+        saveButton = QPushButton('Save Header Changes')
+        saveButton.clicked.connect(self.saveHeaderChanges)
+        layout.addWidget(saveButton)
+
+    def onHeaderEditChanged(self, key, value):
+            self.headerValues[key] = value
+
+    def saveHeaderChanges(self):
+        try:
+            magic_number = self.headerValues['Magic Number'].encode('utf-8')
+            version = int(self.headerValues['Version'])
+            bits_per_pixel = int(self.headerValues['Bits per Pixel'])
+            img_width = int(self.headerValues['Image Width'])
+            img_height = int(self.headerValues['Image Height'])
+            img_nb = int(self.headerValues['Image Number'])
+            total_data_size = int(self.headerValues['Total Data Size'])
+            endianness = int(self.headerValues['Endianness'])
+
+            format_string1 = '4sHHIII'
+            format_string2 = 'QB35x'
+
+            header_part1 = struct.pack(format_string1, magic_number, version, bits_per_pixel, img_width, img_height, img_nb)
+            header_part2 = struct.pack(format_string2, total_data_size, endianness)
+
+            full_header = header_part1 + header_part2
+
+            if len(full_header) != 64:
+                self.logMessage(f"Error: Header size is {len(full_header)} bytes; expected 64 bytes.")
+                return
+
+            with open(self.file, 'r+b') as file:
+                file.write(full_header)
+                self.logMessage("Header saved successfully.")
+        except Exception as e:
+            self.logMessage(f"Error saving header: {e}")
 
     def openFileDialog(self):
         options = QFileDialog.Options()
@@ -71,25 +144,24 @@ class HoloFileReader(QWidget):
             self.unpackHeader(header, filePath)
             self.executeFileButton.setEnabled(True)
 
-    # Méthode pour éditer les éléments
     def editItem(self, item, column):
-        if column == 1:  # On autorise l'édition que pour la colonne des valeurs
+        if column == 1:
             self.jsonView.editItem(item, column)
 
     def saveModifications(self):
-        footerData = self.collectFooterData()  # Utilisez cette méthode pour récupérer uniquement les données du footer
+        footerData = self.collectFooterData()
         if footerData is not None:
             self.jsonData = footerData
 
     def collectFooterData(self):
         root = self.jsonView.invisibleRootItem()
         footerData = None
-        # Parcourir tous les éléments au niveau le plus haut pour trouver le footer
+
         for i in range(root.childCount()):
             item = root.child(i)
-            if item.text(0) == "Footer":  # Identifier l'élément "Footer"
-                footerData = self.collectData(item)  # Commencer la collecte à partir de cet élément
-                break  # Quitter la boucle une fois le footer trouvé
+            if item.text(0) == "Footer":
+                footerData = self.collectData(item)
+                break
         return footerData
 
     def collectData(self, parentItem):
@@ -99,14 +171,19 @@ class HoloFileReader(QWidget):
             key = item.text(0)
             value = item.text(1)
             if item.childCount() > 0:
-                value = self.collectData(item)  # Récurse pour les sous-éléments
+                value = self.collectData(item)
             else:
                 try:
-                    value = json.loads(value)  # Tenter de convertir la valeur en type JSON approprié
+                    value = json.loads(value)
                 except json.JSONDecodeError:
-                    pass  # Garder la valeur comme chaîne si la conversion échoue
+                    pass
             jsonData[key] = value
         return jsonData
+
+    def updateAdvancedTabUI(self):
+        for key, value in self.headerValues.items():
+            if key in self.headerEdits:
+                self.headerEdits[key].setText(str(value))
 
     def unpackHeader(self, header, filePath):
         format_string1 = '4sHHIII'
@@ -128,7 +205,7 @@ class HoloFileReader(QWidget):
         footer = self.readFooter(filePath, total_data_size)
         self.file = filePath
         self.jsonView.clear()  # Clear previous data
-        # Ajouter des informations d'en-tête au QTreeWidget
+
         self.addItems(self.jsonView.invisibleRootItem(), {
             "Magic Number": magic_number,
             "Version": version,
@@ -140,15 +217,24 @@ class HoloFileReader(QWidget):
             "Endianness": endianness
         })
 
-        # Gérer l'affichage du footer s'il est présent
+        self.headerValues['Magic Number'] = magic_number
+        self.headerValues['Version'] = version
+        self.headerValues['Bits per Pixel'] = bits_per_pixel
+        self.headerValues['Image Width'] = img_width
+        self.headerValues['Image Height'] = img_height
+        self.headerValues['Image Number'] = img_nb
+        self.headerValues['Total Data Size'] = total_data_size
+        self.headerValues['Endianness'] = endianness
+
+        self.updateAdvancedTabUI()
+
         if isinstance(footer, dict):
             self.addItems(self.jsonView.invisibleRootItem(), {"Footer": footer})
             self.logMessage("Footer loaded.")
         else:
-                # Si le footer n'existe pas ou est invalide, afficher un message et désactiver le bouton de téléchargement
                 self.addItems(self.jsonView.invisibleRootItem(), {"Footer": "No footer found or it is invalid."})
-                self.jsonData = None  # Réinitialiser les données JSON
-                self.downloadJsonButton.setEnabled(False)  # Désactiver le bouton de téléchargement
+                self.jsonData = None
+                self.downloadJsonButton.setEnabled(False)
                 self.logMessage("No / incorect Footer Found")
 
     def readFooter(self, filePath, total_data_size):
@@ -161,6 +247,7 @@ class HoloFileReader(QWidget):
                     footer = json.loads(footerJson)
                     self.jsonData = json.loads(footerJson)
                     self.downloadJsonButton.setEnabled(True)
+                    self.removeJsonButton.setEnabled(True)
                     return footer
                 except json.JSONDecodeError:
                     return 'Invalid JSON footer.'
@@ -171,9 +258,29 @@ class HoloFileReader(QWidget):
         for i in range(root.childCount()):
             item = root.child(i)
             if item.text(0) == "Footer":
-                # Supprimer l'élément footer existant
                 root.removeChild(item)
                 break
+
+    def removeJson(self):
+        if not self.file or self.data_size == 0:
+            self.logMessage("No file or data size information available.")
+            return
+
+        # Open the file in read+write binary mode ('r+b')
+        with open(self.file, 'r+b') as file:
+            # Seek to the start of the JSON footer, which is right after the main data
+            # This position is determined by the total data size + the header length (64 bytes)
+            file.seek(self.data_size + 64)
+
+            # Truncate the file at this point to remove the footer
+            file.truncate()
+
+        # Update UI and internal state to reflect the removal of the JSON footer
+        self.jsonData = None  # Clear any loaded JSON data
+        self.removeExistingFooter()  # Remove the footer from the UI if it was displayed
+        self.downloadJsonButton.setEnabled(False)  # Disable the download button as there is no JSON to save
+        self.removeJsonButton.setEnabled(False)  # Disable the remove button as there is no JSON to remove
+        self.logMessage("Footer removed successfully.")
 
 
     def loadFooter(self):
@@ -185,10 +292,8 @@ class HoloFileReader(QWidget):
                     self.jsonData = json.load(file)
                     self.logMessage("Footer JSON loaded successfully.")
 
-                    # Supprimez le footer existant avant d'ajouter le nouveau
                     self.removeExistingFooter()
 
-                    # Ajoutez le nouveau footer chargé
                     self.addItems(self.jsonView.invisibleRootItem(), {"Footer": self.jsonData})
 
                 except json.JSONDecodeError as e:
@@ -220,18 +325,17 @@ class HoloFileReader(QWidget):
         total_data_size = self.data_size
         self.saveModifications()
 
-        # Ouvrez le fichier en mode 'r+b' pour lire/écrire sans effacer le contenu
         with open(self.file, 'r+b') as file:
-            file.seek(total_data_size + 64)  # Positionnez-vous juste avant le début du footer présumé
+            file.seek(total_data_size + 64)
             self.jsonData = self.correct_bool_values(self.jsonData)
             footerJson = json.dumps(self.jsonData)
-            file.write(footerJson.encode('utf-8'))  # Écrivez le nouveau footer
-            file.truncate()  # Supprimez tout ce qui se trouve après le nouveau footer
+            file.write(footerJson.encode('utf-8'))
+            file.truncate()
         self.overwriteFooterButton.setEnabled(False)
         self.logMessage("Changes loaded in the file.")
 
     def logMessage(self, message):
-        self.logWindow.appendPlainText(message)  # Ajoute le message au widget de log
+        self.logWindow.appendPlainText(message)
         # Auto-scroll
         self.logWindow.verticalScrollBar().setValue(self.logWindow.verticalScrollBar().maximum())
 
@@ -248,9 +352,9 @@ class HoloFileReader(QWidget):
         return data
 
     def onItemChanged(self, item, column):
-        if column == 1:  # Seulement intéressé par les modifications de la colonne des valeurs
-            key = item.text(0)  # La clé de l'élément modifié
-            newValue = item.text(1)  # La nouvelle valeur
+        if column == 1:
+            key = item.text(0)
+            newValue = item.text(1)
             if self.collectFooterData() == self.jsonData:
                 self.overwriteFooterButton.setEnabled(False)
             else:
